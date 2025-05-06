@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Colorful Receipt with QR Code and Barcode</title>
+  <!-- <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script> -->
+  <!-- <script src="https://cdn.jsdelivr.net/npm/jsbarcode/dist/JsBarcode.all.min.js"></script> -->
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f0f2f5;
+      padding: 20px;
+      color: #333;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #2c3e50;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      flex: 1;
+      padding: 11px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    button {
+      background-color: #3498db;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      font-weight: 600;
+      font-size: 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+      /* float: right; */
+    }
+
+    button:hover {
+      background-color: #2980b9;
+    }
+
+    .items-list {
+      margin-bottom: 15px;
+      padding-left: 10px;
+    }
+
+    /* .item-line {
+      margin-bottom: 5px;
+    } */
+
+    .receipt {
+      padding: 20px;
+      border: 2px solid #2980b9;
+      border-radius: 10px;
+      background: #ecf6fc;
+      margin-top: 20px;
+      font-size: 14px;
+    }
+
+    .line {
+      display: flex;
+      justify-content: space-between;
+      margin: 4px 0;
+    }
+
+    .center {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .highlight {
+      background-color: #dff0d8;
+      font-weight: bold;
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+
+    .total-line {
+      background-color: #f9e79f;
+      font-weight: bold;
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+
+    /* Print styles */
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+
+      .input-row,
+      .items-list,
+      h2 {
+        display: none !important;
+      }
+
+      .container {
+        box-shadow: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .receipt {
+        border: none;
+        background: white;
+      }
+
+      .highlight, .total-line {
+        background: none;
+        padding: 0;
+      }
+
+      #qr-code, #barcode {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🧾 Receipt</h2>
+    <div class="input-row">
+      <input type="text" id="itemName" placeholder="Item name" />
+      <input type="number" id="itemPrice" placeholder="Price" />
+      <input type="number" id="itemQuantity" placeholder="Qty" />
+      <button onclick="addItem()">Add</button>
+    </div>
+
+    <div class="items-list" id="itemsList"></div>
+
+    <div class="input-row">
+      <input type="number" id="tax" placeholder="Tax %" />
+      <input type="number" id="discount" placeholder="Discount %" />
+      <button onclick="printReceipt()">Print</button>
+    </div>
+
+    <div class="receipt" id="receipt">
+      <div class="center">
+        <h3 style="margin: 0; color: #2980b9;">My Shop</h3>
+        <p style="margin: 4px 0;">Date: <span id="date"></span></p>
+      </div>
+      <hr />
+      <div id="receiptItems"></div>
+      <hr />
+      <div class="line highlight"><span>Subtotal:</span><span id="subtotal">₹0.00</span></div>
+      <div class="line highlight"><span>Tax:</span><span id="taxAmount">₹0.00</span></div>
+      <div class="line highlight"><span>Discount:</span><span id="discountAmount">₹0.00</span></div>
+      <hr />
+      <div class="line total-line"><span>Total:</span><span id="finalTotal">₹0.00</span></div>
+      <hr />
+      <div class="center">🎉 Thank you for your purchase! 🎉</div>
+      <hr />
+      <!-- QR Code -->
+      <!-- <div class="center">
+        <div id="qrcode"></div>
+      </div> -->
+      <hr />
+      <!-- Barcode -->
+      <!-- <div class="center">
+        <svg id="barcode"></svg>
+      </div> -->
+    </div>
+  </div>
+
+  <script>
+    const items = [];
+
+    function addItem() {
+      const name = document.getElementById("itemName").value.trim();
+      const price = parseFloat(document.getElementById("itemPrice").value.trim());
+      const quantity = parseInt(document.getElementById("itemQuantity").value.trim());
+
+      if (!name || isNaN(price) || isNaN(quantity) || quantity <= 0) {
+        alert("Please enter valid name, price, and quantity.");
+        return;
+      }
+
+      items.push({ name, price, quantity });
+
+      document.getElementById("itemName").value = "";
+      document.getElementById("itemPrice").value = "";
+      document.getElementById("itemQuantity").value = "";
+
+      renderItemList();
+    }
+
+    function renderItemList() {
+      const list = document.getElementById("itemsList");
+      list.innerHTML = items.map(item =>
+        `<div class="item-line">• ${item.name} — ₹${item.price} × ${item.quantity}</div>`
+      ).join("");
+    }
+
+    function printReceipt() {
+      if (items.length === 0) {
+        alert("Add at least one item.");
+        return;
+      }
+
+      const receiptItems = document.getElementById("receiptItems");
+      const date = new Date().toLocaleString();
+      document.getElementById("date").innerText = date;
+
+      let total = 0;
+      receiptItems.innerHTML = items.map(item => {
+        const itemTotal = item.price * item.quantity;
+        total += itemTotal;
+        return `<div class="line"><span>${item.name} (${item.quantity})</span><span>₹${itemTotal.toFixed(2)}</span></div>`;
+      }).join("");
+
+      const taxPercent = parseFloat(document.getElementById("tax").value) || 0;
+      const discountPercent = parseFloat(document.getElementById("discount").value) || 0;
+
+      const taxAmount = total * (taxPercent / 100);
+      const discountAmount = total * (discountPercent / 100);
+      const final = total + taxAmount - discountAmount;
+
+      document.getElementById("subtotal").innerText = `₹${total.toFixed(2)}`;
+      document.getElementById("taxAmount").innerText = `₹${taxAmount.toFixed(2)}`;
+      document.getElementById("discountAmount").innerText = `₹${discountAmount.toFixed(2)}`;
+      document.getElementById("finalTotal").innerText = `₹${final.toFixed(2)}`;
+
+      // QR Code generation
+    //   const qrCodeText = `Receipt - Total: ₹${final.toFixed(2)}| Date: ${date}`;
+    //   QRCode.toCanvas(document.getElementById("qrcode"), qrCodeText);
+
+    //   // Barcode generation
+    //   JsBarcode("#barcode", `R${Date.now()}`, {
+    //     format: "CODE128",
+    //     width: 2,
+    //     height: 40,
+    //     displayValue: false
+    //   });
+
+      window.print();
+    }
+  </script>
+</body>
+</html>
